@@ -15,7 +15,6 @@ class Quiz extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(questions);
     return Column(
       children: <Widget>[
         Question(questions[questionIndex]['question']),
