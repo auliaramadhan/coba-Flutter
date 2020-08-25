@@ -1,82 +1,124 @@
-import 'package:first_app/quiz.dart';
-import 'package:first_app/result.dart';
+import 'package:first_app/models/transaction.dart';
+import 'package:first_app/widgets/chart.dart';
+import 'package:first_app/widgets/new_transaction.dart';
+import 'package:first_app/widgets/transaction_list.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-void main() {
-  runApp(MyApp());
-}
+void main() => runApp(MyApp());
 
-class MyApp extends StatefulWidget {
-  MyApp({Key key}) : super(key: key);
-
+class MyApp extends StatelessWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Material App',
+      theme: ThemeData(
+          primarySwatch: Colors.red,
+          fontFamily: 'Quicksand',
+          appBarTheme: AppBarTheme(
+            textTheme: ThemeData.light().textTheme.copyWith(
+                title: TextStyle(
+                  fontFamily: 'OpenSans',
+                  fontSize: 20,
+                ),
+                button: TextStyle(color: Colors.white)),
+          )),
+      home: MyHomePage(),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  var _questions = const [
-    {
-      'question': "What's your favorite color?",
-      'answer': [
-        {'text': 'black', 'score': 4},
-        {'text': 'red', 'score': 5},
-        {'text': 'green', 'score': 5}
-      ]
-    },
-    {
-      'question': "What's your favorite Animal?",
-      'answer': [
-        {'text': 'Rabit', 'score': 6},
-        {'text': 'Snake', 'score': 7},
-        {'text': 'elephant', 'score': 3},
-        {'text': 'Lion', 'score': 8}
-      ]
-    },
-    {
-      'question': "What's your favorite Instructor?",
-      'answer': [
-        {'text': 'Max', 'score': 5},
-        {'text': 'Max', 'score': 6},
-        {'text': 'Max', 'score': 4},
-        {'text': 'MAX', 'score': 3}
-      ]
-    },
-    // 'What\'s your favorite color?',
-    // 'What\'s your favorite animal?',
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final List<Transaction> _userTransactions = [
+    Transaction(
+      id: 't1',
+      title: 'New Shoes',
+      amount: 69.99,
+      date: DateTime.now(),
+    ),
+    Transaction(
+      id: 't2',
+      title: 'Weekly Groceries',
+      amount: 16.53,
+      date: DateTime.now(),
+    ),
   ];
 
-  var _questionIndex = 0;
-  var _total = 0;
-
-  void _answerQuestion(int score) {
-    _total += score;
-    setState(() {
-      _questionIndex = _questionIndex + 1;
-    });
-    if (_questionIndex < _questions.length) {
-      print('ada pertanyaan');
-    } else {
-      print('ga ada lagi');
-    }
+  List<Transaction> get _recentTransaction {
+    return _userTransactions
+        .where((data) => data.date.isAfter(
+              DateTime.now().subtract(
+                Duration(days: 7),
+              ),
+            ))
+        .toList();
   }
 
-  void _reset() {
+  void _deleteTransaction(String id) {
     setState(() {
-      _questionIndex = 0;
-      _total = 0;
+      _userTransactions.removeWhere((tx) {
+        return tx.id == id;
+      });
     });
+  }
+
+  void _addNewTransaction(String title, double amount) {
+    final newTx = Transaction(
+      id: DateTime.now().toString(),
+      title: title,
+      amount: amount,
+      date: DateTime.now(),
+    );
+
+    setState(() {
+      _userTransactions.add(newTx);
+    });
+  }
+
+  void _startAddNewTransaction(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return GestureDetector(
+          child: NewTransaction(_addNewTransaction),
+          onTap: () {},
+          behavior: HitTestBehavior.opaque,
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('M First App'),
-        ),
-        body: _questionIndex < _questions.length
-            ? Quiz(questions: _questions, answerQuestion: _answerQuestion, questionIndex: _questionIndex)
-            : Result(resetQuiz: _reset, totalScore: _total),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Transaction App'),
+        actions: <Widget>[
+          IconButton(
+            alignment: Alignment.topLeft,
+            icon: Icon(Icons.add),
+            onPressed: () => _startAddNewTransaction(context),
+          )
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Chart(_recentTransaction),
+          TransactionList(_userTransactions, _deleteTransaction),
+        ],
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () {
+          _startAddNewTransaction(context);
+        },
       ),
     );
   }
